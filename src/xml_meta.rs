@@ -1,18 +1,10 @@
-use std::{collections::HashMap, io::Read, marker::PhantomData, os::windows::thread};
-
 use crate::xml_paramdef::DefBaseType;
-use lazy_static::{__Deref, lazy_static};
-use quick_xml::{
-    self,
-    events::{attributes, Event},
-    Reader,
-};
-use regex::Regex;
 use serde::{
     de::{self, Visitor},
     Deserialize,
 };
 use serde_derive::Deserialize;
+use std::{collections::HashMap, marker::PhantomData};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename = "PARAMMETA", rename_all = "PascalCase")]
@@ -73,7 +65,7 @@ pub struct ParamMetaField {
     pub is_bool: bool,
 }
 
-fn is_tag_present<'de, D>(deserializer: D) -> Result<bool, D::Error>
+fn is_tag_present<'de, D>(_deserializer: D) -> Result<bool, D::Error>
 where
     D: serde::Deserializer<'de>,
 {

@@ -1,21 +1,13 @@
-use anyhow::{anyhow, Result};
-use log::debug;
-use std::collections::HashSet;
-use std::collections::{BTreeMap, HashMap};
-use std::env;
-use std::error::Error;
-use std::ffi::OsString;
-use std::fs::File;
-use std::fs::{self, FileType};
-use std::hash::Hash;
-use std::io::ErrorKind::InvalidData;
-use std::io::{self, BufRead, Cursor, Read};
-use std::io::{BufWriter, Write};
-use std::path::Path;
-use std::path::PathBuf;
-
 use crate::xml_meta::ParamMeta;
 use crate::xml_paramdef::Paramdef;
+use anyhow::{anyhow, Result};
+use log::debug;
+use quick_xml::DeError;
+use std::collections::{BTreeMap, HashMap};
+use std::error::Error;
+use std::fs::{self};
+use std::io::{self, BufRead, Cursor};
+use std::path::Path;
 
 pub struct ParamdexDB {
     paramdefs: HashMap<String, BTreeMap<usize, Paramdef>>,
@@ -88,11 +80,11 @@ impl ParamdexDB {
         Ok(ParamdexDB {
             paramdefs: {
                 let mut defs: HashMap<_, BTreeMap<_, _>> =
-                    Self::load_data_in_folder(path.as_ref().join("Defs"), ".xml", |s| {
-                        quick_xml::de::from_str::<Paramdef>(s)
+                    Self::load_data_in_folder(path.as_ref().join("Defs"), ".xml", |s| -> Result<_, DeError> {
+                        Ok(quick_xml::de::from_str::<Paramdef>(s)?.compute_field_offsets())
                     })?
                     .into_iter()
-                    .map(|(name, def)| (name, Some((0, def)).into_iter().collect()))
+                    .map(|(name, def)| (name, BTreeMap::from([(0, def)])))
                     .collect();
 
                 for file in fs::read_dir(path.as_ref().join("DefsPatch"))? {
@@ -108,8 +100,8 @@ impl ParamdexDB {
                         10,
                     )?;
 
-                    for (name, def) in Self::load_data_in_folder(dir_entry.path(), ".xml", |s| {
-                        quick_xml::de::from_str::<Paramdef>(s)
+                    for (name, def) in Self::load_data_in_folder(dir_entry.path(), ".xml", |s| -> Result<_, DeError> {
+                        Ok(quick_xml::de::from_str::<Paramdef>(s)?.compute_field_offsets())
                     })? {
                         defs.entry(name).or_default().insert(version, def);
                     }
@@ -132,7 +124,7 @@ impl ParamdexDB {
         })
     }
 
-    pub fn get_def(&self, name: &str, version: usize) -> Option<&Paramdef> {
+    pub fn def(&self, name: &str, version: usize) -> Option<&Paramdef> {
         self.paramdefs
             .get(name)?
             .range(0..=version)
@@ -140,26 +132,46 @@ impl ParamdexDB {
             .map(|(_, def)| def)
     }
 
-    pub fn get_defs(&self, version: usize) -> HashMap<&str, &Paramdef> {
+    pub fn defs(&self, version: usize) -> HashMap<&str, &Paramdef> {
         self.paramdefs
             .iter()
             .map(|(ptype, patches)| (ptype.as_str(), patches.range(0..=version).last().unwrap().1))
             .collect()
     }
 
-    pub fn get_latest_def(&self, name: &str) -> Option<&Paramdef> {
-        self.get_def(name, usize::MAX)
+    pub fn latest_def(&self, name: &str) -> Option<&Paramdef> {
+        self.def(name, usize::MAX)
     }
 
-    pub fn get_latest_defs(&self, name: &str) -> HashMap<&str, &Paramdef> {
-        self.get_defs(usize::MAX)
+    pub fn latest_defs(&self) -> HashMap<&str, &Paramdef> {
+        self.defs(usize::MAX)
     }
 
-    pub fn get_base_def(&self, name: &str) -> Option<&Paramdef> {
-        self.get_def(name, 0)
+    pub fn base_def(&self, name: &str) -> Option<&Paramdef> {
+        self.def(name, 0)
     }
 
-    pub fn get_base_defs(&self) -> HashMap<&str, &Paramdef> {
-        self.get_defs(0)
+    pub fn base_defs(&self) -> HashMap<&str, &Paramdef> {
+        self.defs(0)
+    }
+
+    pub fn def_meta(&self, name: &str) -> Option<&ParamMeta> {
+        self.param_meta.get(name)
+    }
+
+    pub fn def_metas(&self) -> &HashMap<String, ParamMeta> {
+        &self.param_meta
+    }
+
+    pub fn param_names(&self) -> impl Iterator<Item = &str> {
+        self.names.keys().into_iter().map(String::as_str)
+    }
+
+    pub fn row_id_names(&self, param_name: &str) -> Option<&HashMap<u32, String>> {
+        self.names.get(param_name)
+    }
+
+    pub fn all_row_id_names(&self) -> &HashMap<String, HashMap<u32, String>> {
+        &self.names
     }
 }
