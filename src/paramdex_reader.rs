@@ -79,13 +79,16 @@ impl ParamdexDB {
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         Ok(ParamdexDB {
             paramdefs: {
-                let mut defs: HashMap<_, BTreeMap<_, _>> =
-                    Self::load_data_in_folder(path.as_ref().join("Defs"), ".xml", |s| -> Result<_, DeError> {
+                let mut defs: HashMap<_, BTreeMap<_, _>> = Self::load_data_in_folder(
+                    path.as_ref().join("Defs"),
+                    ".xml",
+                    |s| -> Result<_, DeError> {
                         Ok(quick_xml::de::from_str::<Paramdef>(s)?.compute_field_offsets())
-                    })?
-                    .into_iter()
-                    .map(|(name, def)| (name, BTreeMap::from([(0, def)])))
-                    .collect();
+                    },
+                )?
+                .into_iter()
+                .map(|(name, def)| (name, BTreeMap::from([(0, def)])))
+                .collect();
 
                 for file in fs::read_dir(path.as_ref().join("DefsPatch"))? {
                     let dir_entry = file?;
@@ -100,9 +103,13 @@ impl ParamdexDB {
                         10,
                     )?;
 
-                    for (name, def) in Self::load_data_in_folder(dir_entry.path(), ".xml", |s| -> Result<_, DeError> {
-                        Ok(quick_xml::de::from_str::<Paramdef>(s)?.compute_field_offsets())
-                    })? {
+                    for (name, def) in Self::load_data_in_folder(
+                        dir_entry.path(),
+                        ".xml",
+                        |s| -> Result<_, DeError> {
+                            Ok(quick_xml::de::from_str::<Paramdef>(s)?.compute_field_offsets())
+                        },
+                    )? {
                         defs.entry(name).or_default().insert(version, def);
                     }
                 }
@@ -139,19 +146,19 @@ impl ParamdexDB {
             .collect()
     }
 
-    pub fn latest_def(&self, name: &str) -> Option<&Paramdef> {
+    pub fn def_latest(&self, name: &str) -> Option<&Paramdef> {
         self.def(name, usize::MAX)
     }
 
-    pub fn latest_defs(&self) -> HashMap<&str, &Paramdef> {
+    pub fn defs_latest(&self) -> HashMap<&str, &Paramdef> {
         self.defs(usize::MAX)
     }
 
-    pub fn base_def(&self, name: &str) -> Option<&Paramdef> {
+    pub fn def_base(&self, name: &str) -> Option<&Paramdef> {
         self.def(name, 0)
     }
 
-    pub fn base_defs(&self) -> HashMap<&str, &Paramdef> {
+    pub fn defs_base(&self) -> HashMap<&str, &Paramdef> {
         self.defs(0)
     }
 

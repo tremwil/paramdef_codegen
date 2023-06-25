@@ -13,16 +13,18 @@ pub struct Paramdef {
     pub format_version: u32,
     pub fields: DefFields,
 
-    #[serde(skip_serializing, skip_deserializing)] 
+    #[serde(skip_serializing, skip_deserializing)]
     pub size_bytes: Option<usize>,
 }
 
 impl Paramdef {
     pub fn compute_field_offsets(mut self) -> Self {
-        let mut bit_offset : usize = 0;
+        let mut bit_offset: usize = 0;
         self.fields.first_mut().map(|f| f.bit_offset = Some(0));
         for i in 1..self.fields.len() {
-            bit_offset = self.fields[i].field_def.compute_bit_offset(bit_offset, &self.fields[i-1].field_def);
+            bit_offset = self.fields[i]
+                .field_def
+                .compute_bit_offset(bit_offset, &self.fields[i - 1].field_def);
             self.fields[i].bit_offset = Some(bit_offset);
         }
         // Align bit offset to last field's size
@@ -68,7 +70,7 @@ pub struct DefField {
     pub increment: Option<f32>,
     pub sort_id: Option<i32>,
 
-    #[serde(skip_serializing, skip_deserializing)] 
+    #[serde(skip_serializing, skip_deserializing)]
     pub bit_offset: Option<usize>,
 }
 
@@ -106,7 +108,7 @@ impl DefBaseRustType {
         match *self {
             Self::U8 | Self::I8 => 1,
             Self::U16 | Self::I16 => 2,
-            Self::U32 | Self::I32 | Self::F32 => 4
+            Self::U32 | Self::I32 | Self::F32 => 4,
         }
     }
 
@@ -197,7 +199,7 @@ impl DefType {
         match self.modifier {
             DefTypeModifier::None => 8 * self.base_type.size_bytes(),
             DefTypeModifier::Array(len) => 8 * len * self.base_type.size_bytes(),
-            DefTypeModifier::Bitfield(width) => width
+            DefTypeModifier::Bitfield(width) => width,
         }
     }
 
@@ -214,7 +216,6 @@ impl DefType {
         if let DefTypeModifier::Bitfield(my_bit_width) = self.modifier {
             if let DefTypeModifier::Bitfield(prev_bit_width) = prev_field.modifier {
                 if self.base_type.rust_type() == prev_field.base_type.rust_type() {
-
                     // Ensure there is enough place in the integer type to fit the bitfield
                     let bit_shift = prev_offset & (self.alignment_bits() - 1);
                     if bit_shift + prev_bit_width + my_bit_width <= self.alignment_bits() {
