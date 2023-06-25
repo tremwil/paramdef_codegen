@@ -3,28 +3,12 @@ use regex::Regex;
 use serde::{de, Deserialize};
 use serde_derive::Deserialize;
 
-fn deserialize_bool_caps<'de, D>(deserializer: D) -> Result<bool, D::Error>
-where
-    D: de::Deserializer<'de>,
-{
-    let s: String = de::Deserialize::deserialize(deserializer)?;
-
-    match s.as_str() {
-        "True" => Ok(true),
-        "False" => Ok(false),
-        _ => Err(de::Error::unknown_variant(&s, &["True", "False"])),
-    }
-}
-
 #[derive(Deserialize)]
-#[serde(rename = "PARAMDEF")]
-#[serde(rename_all = "PascalCase")]
+#[serde(rename = "PARAMDEF", rename_all = "PascalCase")]
 pub struct Paramdef {
     pub param_type: String,
     pub data_version: u32,
-    #[serde(deserialize_with = "deserialize_bool_caps")]
     pub big_endian: bool,
-    #[serde(deserialize_with = "deserialize_bool_caps")]
     pub unicode: bool,
     pub format_version: u32,
     pub fields: DefFields,
@@ -69,7 +53,8 @@ pub enum DefBaseRustType {
     F32,
 }
 
-#[derive(Clone, Debug, Copy, PartialEq, Eq)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum DefBaseType {
     Dummy8,
     S8,

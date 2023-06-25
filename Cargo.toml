@@ -16,3 +16,4 @@ quick-xml = { version = "0.29.0", features = [ "serialize" ] }
 parse_int = "0.6.0"
 log = "0.4.19"
 simple_logger = "4.2.0"
+anyhow = "1.0.71"

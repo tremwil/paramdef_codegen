@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PARAMMETA XmlVersion="0">
   <Enums>
-    <Enum Name="ITEMLOT_ITEMCATEGORY" type="x32">
+    <Enum Name="ITEMLOT_ITEMCATEGORY" type="s32">
       <Option Value="0" Name="None" />
       <Option Value="1" Name="Good" />
       <Option Value="2" Name="Weapon" />

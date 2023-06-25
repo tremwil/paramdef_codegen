@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PARAMMETA XmlVersion="0">
   <Enums>
-    <Enum Name="SP_EFFECT_TYPE" type="u16">
+     <Enum Name="SP_EFFECT_TYPE" type="u16">
         <Option Value="0" Name="None" />
         <Option Value="2" Name="Poison" />
         <Option Value="3" Name="Unknown" />
@@ -373,7 +373,6 @@
         <Option Value="469" Name="Unknown" />
         <Option Value="1000" Name="SkipSpCategoryCheck1" />
         <Option Value="1001" Name="SkipSpCategoryCheck2" />
-
     </Enum>
     <Enum Name="GOODS_TYPE" type="u8">
       <Option Value="0" Name="Normal Item" />
@@ -451,7 +450,7 @@
       <Option Value="63" Name="Omen Bairn" />
       <Option Value="64" Name="Shackle" />
       <Option Value="65" Name="Rune Arc" />
-      <Option Value="66" Name="Soft Cotton" />v
+      <Option Value="66" Name="Soft Cotton" />
       <Option Value="90" Name="Spark Aromatic" />
       <Option Value="91" Name="Uplifting Aromatic" />
       <Option Value="92" Name="Phnatom Great Rune" />
