@@ -62,7 +62,8 @@ pub struct DefField {
     #[serde(rename = "@Def")]
     pub field_def: DefType,
     pub display_name: Option<String>,
-    pub r#enum: Option<String>,
+    #[serde(rename = "Enum")]
+    pub enum_name: Option<String>,
     pub description: Option<String>,
     pub edit_flags: Option<String>,
     pub minimum: Option<f64>,
