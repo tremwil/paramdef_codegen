@@ -61,10 +61,7 @@ fn decrypt_cbc256_regulation(key: &[u8; 32], encrypted: &[u8]) -> Result<BND4> {
     // Bruh moment (can't do no padding otherwise)
     // SAFETY: same align, total size of `blocks` is smaller than `out_buf`
     unsafe {
-        let blocks = std::slice::from_raw_parts_mut(
-            out_buf.as_mut_ptr() as *mut aes::Block,
-            out_buf.len() / 16,
-        );
+        let (_, blocks, _) = out_buf.as_mut_slice().align_to_mut::<aes::Block>();
 
         cipher.decrypt_blocks_mut(blocks);
     }

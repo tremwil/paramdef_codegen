@@ -129,8 +129,7 @@ impl BND4 {
                     reader.seek(Start(start))?;
                     let out = DCX::decompress(reader)?;
                     return Self::read(&mut Cursor::new(out.as_slice()));
-                }
-                else {
+                } else {
                     Err(e)
                 }
             }
@@ -153,17 +152,19 @@ impl BND4 {
 
         for _ in 0..header.file_count {
             let flags = r.read_bits::<B>()?;
-            
-            assert_read(&r.read_slice()? == b"\0\0\0", "Unexpected file header nonzeros")?;
+
+            assert_read(
+                &r.read_slice()? == b"\0\0\0",
+                "Unexpected file header nonzeros",
+            )?;
             assert_read(r.read_i32::<B>()? == -1, "Unexpected file header non -1")?;
 
             let disk_size = r.read_u64::<B>()?;
-            let uncompressed_size = ((header.format & Header::FORMAT_COMPRESSED) != 0)
-                .then_some(r.read_u64::<B>()?);
+            let uncompressed_size =
+                ((header.format & Header::FORMAT_COMPRESSED) != 0).then_some(r.read_u64::<B>()?);
             let data_offset = r.read_u32::<B>()? as u64;
 
-            let mut id =
-                ((header.format & Header::FORMAT_HASH) != 0).then_some(r.read_u32::<B>()?);
+            let mut id = ((header.format & Header::FORMAT_HASH) != 0).then_some(r.read_u32::<B>()?);
 
             let name = ((header.format & Header::FORMAT_NAMES) != 0).then_some({
                 let name_offset = r.read_u32::<B>()? as u64;
