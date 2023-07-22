@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    io::Result,
+    io::{stdout, Result},
     marker::PhantomData,
     ops::{Deref, DerefMut},
     path::Path,
@@ -8,12 +8,15 @@ use std::{
 
 mod binary_utils;
 mod bnd4;
+mod codegen;
 mod dcx;
 mod game;
 mod param;
 mod paramdex_reader;
 mod xml_meta;
 mod xml_paramdef;
+
+use codegen::CodegenParams;
 
 use crate::{bnd4::*, game::*, param::*};
 
@@ -33,29 +36,36 @@ fn main() {
         .collect();
 
     let reg = read_regulation::<ER>("regulations/er").unwrap();
-    for file in reg.files {
-        if let Some(name) = file.name {
-            if !name.ends_with(".param") {
-                continue;
-            }
+    // for file in &reg.files {
+    //     if let Some(name) = &file.name {
+    //         if !name.ends_with(".param") {
+    //             continue;
+    //         }
 
-            let param = ParamFile::new(&file.data).unwrap();
-            println!(
-                "{}: {}, size {:?}, {} rows",
-                name,
-                &param.header.param_type,
-                param.row_size,
-                param.rows.len()
-            );
+    //         let param = ParamFile::new(&file.data).unwrap();
+    //         println!(
+    //             "{}: {}, size {:?}, {} rows",
+    //             name,
+    //             &param.header.param_type,
+    //             param.row_size,
+    //             param.rows.len()
+    //         );
 
-            if let Some(sz) = param.row_size {
-                let expected_sz = type_to_def
-                    .get(&param.header.param_type)
-                    .unwrap()
-                    .size_bytes
-                    .unwrap();
-                assert!(expected_sz == sz as usize, "Paramdef size mismatch")
-            }
-        }
-    }
+    //         if let Some(sz) = param.row_size {
+    //             let expected_sz = type_to_def
+    //                 .get(&param.header.param_type)
+    //                 .unwrap()
+    //                 .size_bytes
+    //                 .unwrap();
+    //             assert!(expected_sz == sz as usize, "Paramdef size mismatch")
+    //         }
+    //     }
+    // }
+
+    let cg = codegen::RustCodegen::new(&reg, &db, usize::MAX).unwrap();
+
+    let mut out = String::new();
+    cg.gen_paramdef("ActionButtonParam", &CodegenParams::default(), &mut out)
+        .unwrap();
+    std::fs::write("test_param.rs", out).ok();
 }

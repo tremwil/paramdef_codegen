@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{de, Deserialize};
@@ -76,19 +78,19 @@ pub struct DefField {
 }
 
 impl DefField {
-    fn alignment(&self) -> usize {
+    pub fn alignment(&self) -> usize {
         self.field_def.alignment()
     }
 
-    fn alignment_bits(&self) -> usize {
+    pub fn alignment_bits(&self) -> usize {
         self.field_def.alignment_bits()
     }
 
-    fn size_bytes(&self) -> usize {
+    pub fn size_bytes(&self) -> usize {
         self.field_def.size_bytes()
     }
 
-    fn size_bits(&self) -> usize {
+    pub fn size_bits(&self) -> usize {
         self.field_def.size_bits()
     }
 }
@@ -115,6 +117,23 @@ impl DefBaseRustType {
 
     pub fn alignment(&self) -> usize {
         self.size_bytes()
+    }
+
+    pub fn to_str(&self) -> &'static str {
+        match *self {
+            Self::U8 => "u8",
+            Self::I8 => "i8",
+            Self::U16 => "u16",
+            Self::I16 => "i16",
+            Self::U32 => "u32",
+            Self::I32 => "i32",
+            Self::F32 => "f32",
+        }
+    }
+}
+impl Display for DefBaseRustType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.to_str())
     }
 }
 
@@ -179,6 +198,21 @@ pub enum DefTypeModifier {
     None,
     Array(usize),
     Bitfield(usize),
+}
+impl DefTypeModifier {
+    pub fn is_array(&self) -> bool {
+        match *self {
+            Self::Array(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_bitfield(&self) -> bool {
+        match *self {
+            Self::Bitfield(_) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

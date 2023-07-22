@@ -18,6 +18,22 @@ pub struct ParamMeta {
         deserialize_with = "deserialize_map::<ParamMetaField, _>"
     )]
     pub fields: HashMap<String, ParamMetaField>,
+    #[serde(rename = "Self", deserialize_with = "self_desc")]
+    pub self_desc: Option<String>,
+}
+
+fn self_desc<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    struct SelfInfo {
+        #[serde(rename = "@Wiki")]
+        pub wiki: Option<String>,
+    }
+
+    let self_info: SelfInfo = de::Deserialize::deserialize(deserializer)?;
+    Ok(self_info.wiki)
 }
 
 #[derive(Default, Clone, Debug, Deserialize)]
