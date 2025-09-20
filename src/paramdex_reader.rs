@@ -39,6 +39,7 @@ impl ParamdexDB {
                 .unwrap_or("INVALID".into())
                 .to_string_lossy()
         );
+
         let mut vec = Vec::new();
         let files = fs::read_dir(path.as_ref())?.into_iter().filter_map(|de| {
             let dir = de.ok()?;
@@ -90,37 +91,43 @@ impl ParamdexDB {
                 .map(|(name, def)| (name, BTreeMap::from([(0, def)])))
                 .collect();
 
-                for file in fs::read_dir(path.as_ref().join("DefsPatch"))? {
-                    let dir_entry = file?;
-                    if !dir_entry.file_type()?.is_dir() {
-                        continue;
-                    }
-                    let version = usize::from_str_radix(
-                        dir_entry
-                            .file_name()
-                            .to_str()
-                            .ok_or(anyhow!("file name cannot be converted to UTF8"))?,
-                        10,
-                    )?;
-
-                    for (name, def) in Self::load_data_in_folder(
-                        dir_entry.path(),
-                        ".xml",
-                        |s| -> Result<_, DeError> {
-                            Ok(quick_xml::de::from_str::<Paramdef>(s)?.compute_field_offsets())
-                        },
-                    )? {
-                        defs.entry(name).or_default().insert(version, def);
+                if path.as_ref().join("DefsPatch").exists() {
+                    for file in fs::read_dir(path.as_ref().join("DefsPatch"))? {
+                        let dir_entry = file?;
+                        if !dir_entry.file_type()?.is_dir() {
+                            continue;
+                        }
+                        let version = usize::from_str_radix(
+                            dir_entry
+                                .file_name()
+                                .to_str()
+                                .ok_or(anyhow!("file name cannot be converted to UTF8"))?,
+                            10,
+                        )?;
+    
+                        for (name, def) in Self::load_data_in_folder(
+                            dir_entry.path(),
+                            ".xml",
+                            |s| -> Result<_, DeError> {
+                                Ok(quick_xml::de::from_str::<Paramdef>(s)?.compute_field_offsets())
+                            },
+                        )? {
+                            defs.entry(name).or_default().insert(version, def);
+                        }
                     }
                 }
-
+                
                 defs
             },
-            param_meta: Self::load_data_in_folder(path.as_ref().join("Meta"), ".xml", |s| {
-                quick_xml::de::from_str::<ParamMeta>(s)
-            })?
-            .into_iter()
-            .collect(),
+            param_meta: if path.as_ref().join("Meta").exists() {
+                Self::load_data_in_folder(path.as_ref().join("Meta"), ".xml", |s| {
+                    quick_xml::de::from_str::<ParamMeta>(s)
+                })?
+                .into_iter()
+                .collect()
+            } else {
+                HashMap::new()
+            },
             names: Self::load_data_in_folder(
                 path.as_ref().join("Names"),
                 ".txt",

@@ -84,3 +84,11 @@ impl Game for ER {
         decrypt_cbc256_regulation(ER_REGULATION_KEY, encrypted)
     }
 }
+
+pub struct SDT;
+impl Game for SDT {
+    const NAME: &'static str = "SDT";
+    fn decrypt_regulation(encrypted: &[u8]) -> Result<BND4> {
+        BND4::read(&mut Cursor::new(encrypted))
+    }
+}

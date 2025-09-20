@@ -6,9 +6,12 @@ use std::{
     path::Path,
 };
 
+mod oodle;
+mod codegen_shared;
+mod cpp_codegen;
 mod binary_utils;
 mod bnd4;
-mod codegen;
+mod rust_codegen;
 mod dcx;
 mod game;
 mod param;
@@ -16,7 +19,7 @@ mod paramdex_reader;
 mod xml_meta;
 mod xml_paramdef;
 
-use codegen::CodegenParams;
+use cpp_codegen::CppCodegen;
 
 use crate::{bnd4::*, game::*, param::*};
 
@@ -27,7 +30,7 @@ fn read_regulation<G: Game>(path: impl AsRef<Path>) -> Result<BND4> {
 
 fn main() {
     simple_logger::init_with_level(log::Level::Debug).unwrap();
-    let db = paramdex_reader::ParamdexDB::load("paramdex").unwrap();
+    let db = paramdex_reader::ParamdexDB::load("paramdex/SDT").unwrap();
 
     let type_to_def: HashMap<_, _> = db
         .defs_latest()
@@ -35,7 +38,7 @@ fn main() {
         .map(|(&_, &v)| (&v.param_type, v))
         .collect();
 
-    let reg = read_regulation::<ER>("regulations/er").unwrap();
+    let reg = read_regulation::<SDT>("regulations/sdt").unwrap();
     // for file in &reg.files {
     //     if let Some(name) = &file.name {
     //         if !name.ends_with(".param") {
@@ -62,10 +65,10 @@ fn main() {
     //     }
     // }
 
-    let cg = codegen::RustCodegen::new(&reg, &db, usize::MAX).unwrap();
+    //let cg = rust_codegen::RustCodegen::new(&reg, &db, usize::MAX).unwrap();
+    let cg = CppCodegen::new(&reg, &db, usize::MAX).unwrap();
 
     let mut out = String::new();
-    cg.gen_paramdef("ActionButtonParam", &CodegenParams::default(), &mut out)
-        .unwrap();
-    std::fs::write("test_param.rs", out).ok();
+    cg.gen_single_header(&mut out).unwrap();
+    std::fs::write("paramdefs.h", out).unwrap();
 }

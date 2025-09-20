@@ -102,18 +102,22 @@ impl<'a> ParamFile<'a> {
         let header = Header::new_endian::<B>(r)?;
         let rows_start = r.position();
 
-        let row_size = (header.row_count >= 2).then_some(match header.is_64bit {
-            true => {
-                let o1 = r.do_at(Start(rows_start + 8), |r| r.read_u64::<B>())?;
-                let o2 = r.do_at(Start(rows_start + 8 + 0x18), |r| r.read_u64::<B>())?;
-                o2 - o1
-            }
-            false => {
-                let o1 = r.do_at(Start(rows_start + 4), |r| r.read_u32::<B>())?;
-                let o2 = r.do_at(Start(rows_start + 8 + 0x18), |r| r.read_u32::<B>())?;
-                (o2 - o1) as u64
-            }
-        });
+        let row_size = if header.row_count >= 2 {
+            Some(match header.is_64bit {
+                true => {
+                    let o1 = r.do_at(Start(rows_start + 8), |r| r.read_u64::<B>())?;
+                    let o2 = r.do_at(Start(rows_start + 8 + 0x18), |r| r.read_u64::<B>())?;
+                    o2 - o1
+                }
+                false => {
+                    let o1 = r.do_at(Start(rows_start + 4), |r| r.read_u32::<B>())?;
+                    let o2 = r.do_at(Start(rows_start + 4 + 0xC), |r| r.read_u32::<B>())?;
+                    (o2 - o1) as u64
+                }
+            })
+        } else {
+            None
+        };
 
         let mut rows = Vec::new();
         for _ in 0..header.row_count {
@@ -129,14 +133,16 @@ impl<'a> ParamFile<'a> {
             let data = r.do_at(Start(data_ofs), |r| {
                 let max_sz = r.get_ref().len() as u64 - r.position();
                 r.read_slice_ref(row_size.unwrap_or(max_sz) as usize)
-            })?;
+            }).unwrap();
 
-            let name = (name_ofs != -1).then_some(r.do_at(Start(name_ofs as u64), |r| {
-                match header.is_unicode {
-                    true => r.read_wide_cstring::<B>(),
-                    false => r.read_cstring(),
-                }
-            })?);
+            let name = if name_ofs != -1 && header.is_unicode {
+                Some(r.do_at(Start(name_ofs as u64), |r| {
+                    r.read_wide_cstring::<B>()
+                })?)
+            }
+            else {
+                None
+            };
 
             rows.push(Row { id, name, data });
         }

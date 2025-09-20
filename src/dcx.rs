@@ -120,7 +120,12 @@ impl DCX {
             Kind::DCX_EDGE => {
                 todo!();
             }
-            Kind::DCX_KRAK => Err(Error::new(ErrorKind::InvalidData, "KRAK not supported")),
+            Kind::DCX_KRAK => {
+                let mut compressed = vec![0u8; compressed_size as usize];
+                r.seek(Start(start + 0x4C))?;
+                r.read_exact(compressed.as_mut_slice())?;
+                Ok(unsafe { crate::oodle::decompress(&compressed, uncompressed_size.unwrap() as usize) }.unwrap())
+            },
             Kind::Unknown => Err(Error::new(ErrorKind::InvalidData, "Unknown DCX type")),
         }
     }

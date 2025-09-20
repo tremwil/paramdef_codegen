@@ -147,7 +147,9 @@ pub enum DefBaseType {
     U16,
     S32,
     U32,
+    B32, // 32-bit bool, apparently is a thing?
     F32,
+    Angle32, // Just a f32, WTF fromsoft
     Fixstr,
     FixstrW,
 }
@@ -162,7 +164,9 @@ impl DefBaseType {
             Self::U16 => DefBaseRustType::U16,
             Self::S32 => DefBaseRustType::I32,
             Self::U32 => DefBaseRustType::U32,
+            Self::B32 => DefBaseRustType::U32,
             Self::F32 => DefBaseRustType::F32,
+            Self::Angle32 => DefBaseRustType::F32,
             Self::Fixstr => DefBaseRustType::I8,
             Self::FixstrW => DefBaseRustType::I16,
         }
@@ -185,11 +189,36 @@ impl DefBaseType {
             "u16" => Some(Self::U16),
             "s32" => Some(Self::S32),
             "u32" => Some(Self::U32),
+            "b32" => Some(Self::B32),
             "f32" => Some(Self::F32),
+            "angle32" => Some(Self::Angle32),
             "fixstr" => Some(Self::Fixstr),
             "fixstrW" => Some(Self::FixstrW),
             _ => None,
         }
+    }
+
+    pub fn to_str(&self) -> &'static str {
+        match *self {
+            Self::Dummy8 => "dummy8",
+            Self::U8 => "u8",
+            Self::S8 => "s8",
+            Self::U16 => "u16",
+            Self::S16 => "s16",
+            Self::U32 => "u32",
+            Self::S32 => "s32",
+            Self::F32 => "f32",
+            Self::B32 => "b32",
+            Self::Angle32 => "angle32",
+            Self::Fixstr => "fixstr",
+            Self::FixstrW => "fixstrW"
+        }
+    }
+}
+
+impl Display for DefBaseType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.to_str())
     }
 }
 
